@@ -1,3 +1,5 @@
+import { getEssayTestData } from './essay-test-data'
+
 // バックエンドAPIクライアント
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
 
@@ -234,6 +236,58 @@ class ApiClient {
       return transformedData
     } catch (error) {
       console.error('テストデータ取得エラー:', error)
+      console.log('ローカルモックデータを使用します')
+      
+      const localData = getEssayTestData(testId)
+      if (localData) {
+        console.log('ローカルモックデータが見つかりました:', localData.title)
+        return {
+          ...localData,
+          id: localData.id,
+          title: localData.title,
+          description: localData.description,
+          reading_time: localData.readingTime,
+          writing_time: localData.writingTime,
+          total_points: localData.totalPoints,
+          difficulty: localData.difficulty,
+          category: localData.category,
+          participants: localData.participants,
+          essay_text: localData.essayText,
+          questions: [
+            {
+              id: 'question1',
+              number: 1,
+              title: localData.question1?.title || '',
+              description: localData.question1?.description || '',
+              points: localData.question1?.points || 0,
+              character_limit: localData.question1?.characterLimit || ''
+            },
+            {
+              id: 'question2',
+              number: 2,
+              title: localData.question2?.title || '',
+              description: localData.question2?.description || '',
+              points: localData.question2?.points || 0,
+              character_limit: localData.question2?.characterLimit || ''
+            }
+          ],
+          scoring_criteria: {
+            main_thesis: localData.scoringCriteria?.mainThesis || '',
+            key_points: localData.scoringCriteria?.keyPoints || [],
+            question2_topic: localData.scoringCriteria?.question2Topic || ''
+          },
+          // 互換性のためのプロパティ
+          readingTime: localData.readingTime,
+          writingTime: localData.writingTime,
+          totalPoints: localData.totalPoints,
+          essayText: localData.essayText,
+          question1: localData.question1,
+          question2: localData.question2,
+          scoringCriteria: localData.scoringCriteria
+        } as EssayTestData
+      }
+      
+      console.error(`テストID "${testId}" のローカルデータが見つかりません`)
       return null
     }
   }
@@ -443,4 +497,4 @@ export const getTestData = apiClient.getTestData.bind(apiClient)
 export const submitEssay = apiClient.submitEssay.bind(apiClient)
 export const getResult = apiClient.getResult.bind(apiClient)
 export const getAllResults = apiClient.getAllResults.bind(apiClient)
-export const healthCheck = apiClient.healthCheck.bind(apiClient) 
+export const healthCheck = apiClient.healthCheck.bind(apiClient)      

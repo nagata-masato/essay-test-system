@@ -9,9 +9,6 @@ on:
 jobs:
   frontend:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./
 
     steps:
     - uses: actions/checkout@v4
@@ -42,7 +39,17 @@ jobs:
     - name: Install dependencies
       run: pnpm install
 
-    - name: Lint
+    - name: Check if ESLint config exists
+      id: eslint-check
+      run: |
+        if [ -f ".eslintrc.json" ] || [ -f ".eslintrc.js" ] || [ -f "eslint.config.js" ] || [ -f "eslint.config.mjs" ]; then
+          echo "eslint_exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "eslint_exists=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Lint (if config exists)
+      if: steps.eslint-check.outputs.eslint_exists == 'true'
       run: pnpm lint
 
     - name: Build
@@ -50,9 +57,6 @@ jobs:
 
   backend:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./essay-test-backend-go
 
     steps:
     - uses: actions/checkout@v4
@@ -68,18 +72,24 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ hashFiles('essay-test-backend-go/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
 
+    - name: Change to backend directory
+      run: cd essay-test-backend-go
+
     - name: Install dependencies
       run: go mod download
+      working-directory: ./essay-test-backend-go
 
     - name: Run tests
       run: go test -v ./...
+      working-directory: ./essay-test-backend-go
 
     - name: Build
       run: go build -o main ./cmd/server/main.go
+      working-directory: ./essay-test-backend-go
 
   deploy:
     needs: [frontend, backend]

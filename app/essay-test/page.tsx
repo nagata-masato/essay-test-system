@@ -11,7 +11,7 @@ export default function EssayTestPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">小論文AI採点</h1>
+        <h1 className="text-3xl font-bold mb-2">小論文AI採点最新</h1>
         <p className="text-muted-foreground">
           読解力と論述力を測定する小論文テストです。結果は大学のスカウト担当者にも公開されます。
         </p>

@@ -1,36 +1,55 @@
+はい、承知いたしました。
+
+以前、いくつか main.yml のサンプルを提示いたしましたが、Node.js プロジェクトのビルドとテストを行うためのサンプルを再度表示します。
+
+このワークフローは、main ブランチへのプッシュ時、または main ブランチに対するプルリクエスト時に実行され、複数の Node.js バージョンでテストを行うように設定されています。このワークフローは、リポジトリに package-lock.json (または npm-shrinkwrap.json) ファイルが存在し、コミットされていることを前提としています。
+
+YAML
+
 # .github/workflows/main.yml
 
 name: Node.js CI
 
+# ワークフローが実行されるトリガーを指定
 on:
   push:
-    branches: [ main ]
+    branches: [ main ] # mainブランチへのpush時
   pull_request:
-    branches: [ main ]
+    branches: [ main ] # mainブランチへのpull request時
 
+# 実行されるジョブを定義
 jobs:
-  build-and-test:
+  build-and-test: # ジョブID
+    # ジョブを実行するランナーを指定
     runs-on: ubuntu-latest
 
+    # 複数のNode.jsバージョンでテストするための戦略
     strategy:
       matrix:
-        node-version: [18.x, 20.x] # 複数のNode.jsバージョンでテストする場合
+        node-version: [18.x, 20.x] # ここでテストしたいNode.jsのバージョンを指定
 
+    # ジョブのステップを定義
     steps:
+    # ステップ1: リポジトリのコードをチェックアウトする
     - name: Checkout code
       uses: actions/checkout@v4
 
+    # ステップ2: 指定したNode.jsバージョンをセットアップする
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-        cache: 'npm' # npmのキャッシュを有効にする
+        cache: 'npm' # npmの依存関係をキャッシュしてビルドを高速化
 
+    # ステップ3: 依存関係をインストールする
+    # npm ci は package-lock.json を使ってクリーンインストールを行います
     - name: Install dependencies
-      run: npm ci # package-lock.jsonに基づいてクリーンインストール
+      run: npm ci
 
+    # ステップ4: プロジェクトをビルドする (package.jsonにbuildスクリプトがある場合)
     - name: Build project (if applicable)
-      run: npm run build --if-present # buildスクリプトがあれば実行
+      run: npm run build --if-present # buildスクリプトが存在すれば実行
 
+    # ステップ5: テストを実行する (package.jsonにtestスクリプトがある場合)
     - name: Run tests
       run: npm test

@@ -1,47 +1,75 @@
-# .github/workflows/main.yml
+name: CI/CD Pipeline
 
-name: Node.js CI
-
-# ワークフローが実行されるトリガーを指定
 on:
   push:
-    branches: [ main ] # mainブランチへのpush時
+    branches: [ main ]
   pull_request:
-    branches: [ main ] # mainブランチへのpull request時
+    branches: [ main ]
 
-# 実行されるジョブを定義
 jobs:
-  build-and-test: # ジョブID
-    # ジョブを実行するランナーを指定
+  frontend:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./
 
-    # 複数のNode.jsバージョンでテストするための戦略
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x] # ここでテストしたいNode.jsのバージョンを指定
-
-    # ジョブのステップを定義
     steps:
-    # ステップ1: リポジトリのコードをチェックアウトする
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    # ステップ2: 指定したNode.jsバージョンをセットアップする
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm' # npmの依存関係をキャッシュしてビルドを高速化
+        node-version: '20'
 
-    # ステップ3: 依存関係をインストールする
-    # npm ci は package-lock.json を使ってクリーンインストールを行います
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+
     - name: Install dependencies
-      run: npm ci
+      run: pnpm install
 
-    # ステップ4: プロジェクトをビルドする (package.jsonにbuildスクリプトがある場合)
-    - name: Build project (if applicable)
-      run: npm run build --if-present # buildスクリプトが存在すれば実行
+    - name: Type check
+      run: pnpm type-check
 
-    # ステップ5: テストを実行する (package.jsonにtestスクリプトがある場合)
+    - name: Lint
+      run: pnpm lint
+
+    - name: Build
+      run: pnpm build
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./essay-test-backend-go
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Install dependencies
+      run: go mod download
+
     - name: Run tests
-      run: npm test
+      run: go test -v ./...
+
+    - name: Build
+      run: go build -o main ./cmd/main.go
+
+  deploy:
+    needs: [frontend, backend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Deploy to production
+      run: |
+        echo "Deployment steps will be added here"
+        # ここにデプロイメントの手順を追加
